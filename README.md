@@ -10,6 +10,10 @@ While developing the module, by using `yarn dev` the compiler will be run in wat
 
 ## Changes
 
+### Unreleased
+
+- Add support for input_number entities: set value, increment, decrement and adjust-by-amount actions, plus a value comparison feedback
+
 ### v2.0.3
 
 - Fix bad merge

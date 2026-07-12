@@ -24,6 +24,10 @@
 - Input Select: Previous
 - Input Select: Select
 - Set group on/off state
+- Input Number: Set value
+- Input Number: Increment
+- Input Number: Decrement
+- Input Number: Adjust by amount
 - Call Service
 
 **Available feedbacks**
@@ -34,6 +38,7 @@
 - Binary sensor state
 - Input select state
 - Group on state
+- Input number value
 
 **Available variables**
 

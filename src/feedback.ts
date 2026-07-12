@@ -4,7 +4,7 @@ import type {
 	CompanionFeedbackInfo,
 } from '@companion-module/base'
 import type { HassEntities, HassEntity } from 'home-assistant-js-websocket'
-import { EntityPicker, OnOffPicker } from './choices.js'
+import { EntityPicker, NumberComparatorPicker, OnOffPicker } from './choices.js'
 import { EntitySubscriptions } from './state.js'
 
 export type FeedbackId = keyof FeedbacksSchema
@@ -50,6 +50,14 @@ export type FeedbacksSchema = {
 		options: {
 			entity_id: string
 			state: boolean
+		}
+	}
+	input_number_value: {
+		type: 'boolean'
+		options: {
+			entity_id: string
+			comparator: string
+			value: number
 		}
 	}
 }
@@ -181,6 +189,56 @@ export function GetFeedbacksList(
 			callback: (feedback): boolean => {
 				subscribeEntityPicker(feedback)
 				return checkEntityOnOffState(feedback)
+			},
+			unsubscribe: unsubscribeEntityPicker,
+		},
+		input_number_value: {
+			type: 'boolean',
+			name: 'Change from input number value',
+			description: 'If the input number value compares to the target as selected',
+			options: [
+				EntityPicker(initialState, 'input_number'),
+				NumberComparatorPicker(),
+				{
+					type: 'number',
+					label: 'Value',
+					id: 'value',
+					default: 0,
+					min: -1000000,
+					max: 1000000,
+					step: 1,
+				},
+			],
+			defaultStyle: {
+				color: 0x000000,
+				bgcolor: 0x00ff00,
+			},
+			callback: (feedback): boolean => {
+				subscribeEntityPicker(feedback)
+				const state = getState()
+				const entity = state[feedback.options.entity_id]
+				if (!entity) return false
+
+				const current = Number(entity.state)
+				const target = Number(feedback.options.value)
+				if (!Number.isFinite(current) || !Number.isFinite(target)) return false
+
+				switch (feedback.options.comparator) {
+					case '==':
+						return current === target
+					case '!=':
+						return current !== target
+					case '<':
+						return current < target
+					case '<=':
+						return current <= target
+					case '>':
+						return current > target
+					case '>=':
+						return current >= target
+					default:
+						return false
+				}
 			},
 			unsubscribe: unsubscribeEntityPicker,
 		},

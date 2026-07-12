@@ -34,6 +34,26 @@ export function OnOffPicker(): CompanionInputFieldCheckbox<'state'> {
 	}
 }
 
+export const NUMBER_COMPARATORS = ['==', '!=', '<', '<=', '>', '>='] as const
+
+export function NumberComparatorPicker(): CompanionInputFieldDropdown<'comparator'> {
+	const options = [
+		{ id: '==', label: 'Equal to' },
+		{ id: '!=', label: 'Not equal to' },
+		{ id: '<', label: 'Less than' },
+		{ id: '<=', label: 'Less than or equal to' },
+		{ id: '>', label: 'Greater than' },
+		{ id: '>=', label: 'Greater than or equal to' },
+	]
+	return {
+		type: 'dropdown',
+		label: 'Comparison',
+		id: 'comparator',
+		default: '>=',
+		choices: options,
+	}
+}
+
 function EntityOptions(state: HassEntity[], prefix: string | undefined): DropdownChoice<string>[] {
 	const entities = state.filter((ent) => prefix === undefined || ent.entity_id.indexOf(`${prefix}.`) === 0)
 

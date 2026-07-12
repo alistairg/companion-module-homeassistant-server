@@ -87,6 +87,28 @@ export type ActionsSchema = {
 			state: OnOffToggle
 		}
 	}
+	input_number_set: {
+		options: {
+			entity_id: string[]
+			value: number
+		}
+	}
+	input_number_increment: {
+		options: {
+			entity_id: string[]
+		}
+	}
+	input_number_decrement: {
+		options: {
+			entity_id: string[]
+		}
+	}
+	input_number_adjust: {
+		options: {
+			entity_id: string[]
+			delta: number
+		}
+	}
 	call_service: {
 		options: {
 			entity_id: string[]
@@ -309,6 +331,94 @@ export function GetActionsList(
 			name: 'Set group on/off state',
 			options: [EntityMultiplePicker(initialState, 'group'), OnOffTogglePicker()],
 			callback: async (evt) => entityOnOff(evt.options),
+		},
+		input_number_set: {
+			name: 'Input Number: Set value',
+			options: [
+				EntityMultiplePicker(initialState, 'input_number'),
+				{
+					type: 'number',
+					label: 'Value',
+					id: 'value',
+					default: 0,
+					min: -1000000,
+					max: 1000000,
+					step: 1,
+				},
+			],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				await callService(client, 'input_number', 'set_value', {
+					entity_id: evt.options.entity_id,
+					value: Number(evt.options.value),
+				})
+			},
+		},
+		input_number_increment: {
+			name: 'Input Number: Increment',
+			options: [EntityMultiplePicker(initialState, 'input_number')],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				await callService(client, 'input_number', 'increment', {
+					entity_id: evt.options.entity_id,
+				})
+			},
+		},
+		input_number_decrement: {
+			name: 'Input Number: Decrement',
+			options: [EntityMultiplePicker(initialState, 'input_number')],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				await callService(client, 'input_number', 'decrement', {
+					entity_id: evt.options.entity_id,
+				})
+			},
+		},
+		input_number_adjust: {
+			name: 'Input Number: Adjust by amount',
+			options: [
+				EntityMultiplePicker(initialState, 'input_number'),
+				{
+					type: 'number',
+					label: 'Adjustment (added to the current value)',
+					id: 'delta',
+					default: 1,
+					min: -1000000,
+					max: 1000000,
+					step: 1,
+				},
+			],
+			callback: async (evt) => {
+				const { client, state } = getProps()
+				if (!client) return
+
+				const delta = Number(evt.options.delta)
+				for (const entityId of evt.options.entity_id) {
+					const entity = state.find((ent) => ent.entity_id === entityId)
+					if (!entity) continue
+
+					const current = Number(entity.state)
+					if (!Number.isFinite(current)) continue
+
+					let next = current + delta
+					// Respect the helper's configured bounds when they are known
+					const min = Number(entity.attributes.min)
+					const max = Number(entity.attributes.max)
+					if (Number.isFinite(min)) next = Math.max(min, next)
+					if (Number.isFinite(max)) next = Math.min(max, next)
+
+					await callService(client, 'input_number', 'set_value', {
+						entity_id: entityId,
+						value: next,
+					})
+				}
+			},
 		},
 		call_service: {
 			name: 'Call Service',
