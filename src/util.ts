@@ -4,6 +4,19 @@ export enum OnOffToggle {
 	Toggle = 'toggle',
 }
 
+export enum MediaPlayback {
+	Play = 'play',
+	Pause = 'pause',
+	PlayPause = 'play_pause',
+	Stop = 'stop',
+}
+
+export enum MuteToggle {
+	Mute = 'mute',
+	Unmute = 'unmute',
+	Toggle = 'toggle',
+}
+
 export function assertUnreachable(_never: never): void {
 	// throw new Error('Unreachable')
 }

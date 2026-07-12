@@ -24,6 +24,15 @@
 - Input Select: Previous
 - Input Select: Select
 - Set group on/off state
+- Media: Set playback (play / pause / play-pause / stop)
+- Media: Next track
+- Media: Previous track
+- Media: Set mute (mute / unmute / toggle)
+- Media: Volume up
+- Media: Volume down
+- Media: Set volume (percentage)
+- Media: Adjust volume by amount (percentage)
+- Media: Set power (on / off / toggle)
 - Call Service
 
 **Available feedbacks**
@@ -34,6 +43,8 @@
 - Binary sensor state
 - Input select state
 - Group on state
+- Media player playback state
+- Media player mute state
 
 **Available variables**
 

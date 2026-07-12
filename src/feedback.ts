@@ -4,7 +4,7 @@ import type {
 	CompanionFeedbackInfo,
 } from '@companion-module/base'
 import type { HassEntities, HassEntity } from 'home-assistant-js-websocket'
-import { EntityPicker, OnOffPicker } from './choices.js'
+import { EntityPicker, MediaPlaybackStatePicker, OnOffPicker } from './choices.js'
 import { EntitySubscriptions } from './state.js'
 
 export type FeedbackId = keyof FeedbacksSchema
@@ -50,6 +50,20 @@ export type FeedbacksSchema = {
 		options: {
 			entity_id: string
 			state: boolean
+		}
+	}
+	media_playback_state: {
+		type: 'boolean'
+		options: {
+			entity_id: string
+			state: string
+		}
+	}
+	media_muted: {
+		type: 'boolean'
+		options: {
+			entity_id: string
+			muted: boolean
 		}
 	}
 }
@@ -181,6 +195,55 @@ export function GetFeedbacksList(
 			callback: (feedback): boolean => {
 				subscribeEntityPicker(feedback)
 				return checkEntityOnOffState(feedback)
+			},
+			unsubscribe: unsubscribeEntityPicker,
+		},
+		media_playback_state: {
+			type: 'boolean',
+			name: 'Change from media player playback state',
+			description: 'If the media player state matches the rule',
+			options: [EntityPicker(initialState, 'media_player'), MediaPlaybackStatePicker()],
+			defaultStyle: {
+				color: 0x000000,
+				bgcolor: 0x00ff00,
+			},
+			callback: (feedback): boolean => {
+				subscribeEntityPicker(feedback)
+				const state = getState()
+				const entity = state[feedback.options.entity_id]
+				if (entity) {
+					return entity.state === feedback.options.state
+				}
+				return false
+			},
+			unsubscribe: unsubscribeEntityPicker,
+		},
+		media_muted: {
+			type: 'boolean',
+			name: 'Change from media player mute state',
+			description: 'If the media player mute state matches the rule',
+			options: [
+				EntityPicker(initialState, 'media_player'),
+				{
+					type: 'checkbox',
+					label: 'Muted',
+					id: 'muted',
+					default: true,
+				},
+			],
+			defaultStyle: {
+				color: 0x000000,
+				bgcolor: 0x00ff00,
+			},
+			callback: (feedback): boolean => {
+				subscribeEntityPicker(feedback)
+				const state = getState()
+				const entity = state[feedback.options.entity_id]
+				if (entity) {
+					const isMuted = !!entity.attributes?.is_volume_muted
+					return isMuted === !!feedback.options.muted
+				}
+				return false
 			},
 			unsubscribe: unsubscribeEntityPicker,
 		},

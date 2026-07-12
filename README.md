@@ -10,6 +10,10 @@ While developing the module, by using `yarn dev` the compiler will be run in wat
 
 ## Changes
 
+### Unreleased
+
+- Add support for media_player entities: set playback (play/pause/stop), next/previous track, mute/unmute/toggle, volume up/down/set/adjust and power on/off/toggle actions, plus playback state and mute state feedbacks
+
 ### v2.0.3
 
 - Fix bad merge

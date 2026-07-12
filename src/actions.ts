@@ -6,8 +6,8 @@ import {
 	type HassServiceTarget,
 } from 'home-assistant-js-websocket'
 import type { CompanionActionEvent, CompanionActionDefinitions, DropdownChoice } from '@companion-module/base'
-import { EntityMultiplePicker, OnOffTogglePicker } from './choices.js'
-import { OnOffToggle } from './util.js'
+import { EntityMultiplePicker, MediaMutePicker, MediaPlaybackPicker, OnOffTogglePicker } from './choices.js'
+import { MediaPlayback, MuteToggle, OnOffToggle } from './util.js'
 
 export type ActionsSchema = {
 	set_switch: {
@@ -82,6 +82,56 @@ export type ActionsSchema = {
 		}
 	}
 	set_group_on: {
+		options: {
+			entity_id: string[]
+			state: OnOffToggle
+		}
+	}
+	media_set_playback: {
+		options: {
+			entity_id: string[]
+			action: MediaPlayback
+		}
+	}
+	media_next_track: {
+		options: {
+			entity_id: string[]
+		}
+	}
+	media_previous_track: {
+		options: {
+			entity_id: string[]
+		}
+	}
+	media_set_mute: {
+		options: {
+			entity_id: string[]
+			state: MuteToggle
+		}
+	}
+	media_volume_up: {
+		options: {
+			entity_id: string[]
+		}
+	}
+	media_volume_down: {
+		options: {
+			entity_id: string[]
+		}
+	}
+	media_set_volume: {
+		options: {
+			entity_id: string[]
+			volume: number
+		}
+	}
+	media_volume_adjust: {
+		options: {
+			entity_id: string[]
+			delta: number
+		}
+	}
+	media_set_power: {
 		options: {
 			entity_id: string[]
 			state: OnOffToggle
@@ -309,6 +359,192 @@ export function GetActionsList(
 			name: 'Set group on/off state',
 			options: [EntityMultiplePicker(initialState, 'group'), OnOffTogglePicker()],
 			callback: async (evt) => entityOnOff(evt.options),
+		},
+		media_set_playback: {
+			name: 'Media: Set playback',
+			options: [EntityMultiplePicker(initialState, 'media_player'), MediaPlaybackPicker()],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				let service: string
+				switch (evt.options.action) {
+					case MediaPlayback.Play:
+						service = 'media_play'
+						break
+					case MediaPlayback.Pause:
+						service = 'media_pause'
+						break
+					case MediaPlayback.Stop:
+						service = 'media_stop'
+						break
+					default:
+						service = 'media_play_pause'
+						break
+				}
+
+				await callService(client, 'media_player', service, {
+					entity_id: evt.options.entity_id,
+				})
+			},
+		},
+		media_next_track: {
+			name: 'Media: Next track',
+			options: [EntityMultiplePicker(initialState, 'media_player')],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				await callService(client, 'media_player', 'media_next_track', {
+					entity_id: evt.options.entity_id,
+				})
+			},
+		},
+		media_previous_track: {
+			name: 'Media: Previous track',
+			options: [EntityMultiplePicker(initialState, 'media_player')],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				await callService(client, 'media_player', 'media_previous_track', {
+					entity_id: evt.options.entity_id,
+				})
+			},
+		},
+		media_set_mute: {
+			name: 'Media: Set mute',
+			options: [EntityMultiplePicker(initialState, 'media_player'), MediaMutePicker()],
+			callback: async (evt) => {
+				const { client, state } = getProps()
+				if (!client) return
+
+				const mode = evt.options.state
+				for (const entityId of evt.options.entity_id) {
+					let muted: boolean
+					if (mode === MuteToggle.Toggle) {
+						// media_player has no mute toggle service, so invert the current mute state
+						const entity = state.find((ent) => ent.entity_id === entityId)
+						muted = !(entity?.attributes.is_volume_muted ?? false)
+					} else {
+						muted = mode === MuteToggle.Mute
+					}
+
+					await callService(client, 'media_player', 'volume_mute', {
+						entity_id: entityId,
+						is_volume_muted: muted,
+					})
+				}
+			},
+		},
+		media_volume_up: {
+			name: 'Media: Volume up',
+			options: [EntityMultiplePicker(initialState, 'media_player')],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				await callService(client, 'media_player', 'volume_up', {
+					entity_id: evt.options.entity_id,
+				})
+			},
+		},
+		media_volume_down: {
+			name: 'Media: Volume down',
+			options: [EntityMultiplePicker(initialState, 'media_player')],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				await callService(client, 'media_player', 'volume_down', {
+					entity_id: evt.options.entity_id,
+				})
+			},
+		},
+		media_set_volume: {
+			name: 'Media: Set volume (percentage)',
+			options: [
+				EntityMultiplePicker(initialState, 'media_player'),
+				{
+					type: 'number',
+					label: 'Volume (0 = min, 100 = max)',
+					id: 'volume',
+					default: 50,
+					min: 0,
+					max: 100,
+					step: 1,
+					range: true,
+				},
+			],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				const level = Math.min(1, Math.max(0, Number(evt.options.volume) / 100))
+				await callService(client, 'media_player', 'volume_set', {
+					entity_id: evt.options.entity_id,
+					volume_level: level,
+				})
+			},
+		},
+		media_volume_adjust: {
+			name: 'Media: Adjust volume by amount (percentage)',
+			options: [
+				EntityMultiplePicker(initialState, 'media_player'),
+				{
+					type: 'number',
+					label: 'Adjustment (percentage points, added to the current volume)',
+					id: 'delta',
+					default: 5,
+					min: -100,
+					max: 100,
+					step: 1,
+				},
+			],
+			callback: async (evt) => {
+				const { client, state } = getProps()
+				if (!client) return
+
+				const delta = Number(evt.options.delta) / 100
+				for (const entityId of evt.options.entity_id) {
+					const entity = state.find((ent) => ent.entity_id === entityId)
+					if (!entity) continue
+
+					const current = Number(entity.attributes.volume_level)
+					if (!Number.isFinite(current)) continue
+
+					const next = Math.min(1, Math.max(0, current + delta))
+					await callService(client, 'media_player', 'volume_set', {
+						entity_id: entityId,
+						volume_level: next,
+					})
+				}
+			},
+		},
+		media_set_power: {
+			name: 'Media: Set power',
+			options: [EntityMultiplePicker(initialState, 'media_player'), OnOffTogglePicker()],
+			callback: async (evt) => {
+				const { client } = getProps()
+				if (!client) return
+
+				let service: string
+				switch (evt.options.state) {
+					case OnOffToggle.On:
+						service = 'turn_on'
+						break
+					case OnOffToggle.Off:
+						service = 'turn_off'
+						break
+					default:
+						service = 'toggle'
+						break
+				}
+
+				await callService(client, 'media_player', service, {
+					entity_id: evt.options.entity_id,
+				})
+			},
 		},
 		call_service: {
 			name: 'Call Service',

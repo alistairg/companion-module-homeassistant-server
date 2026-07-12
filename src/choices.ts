@@ -5,7 +5,7 @@ import {
 	DropdownChoice,
 } from '@companion-module/base'
 import type { HassEntity } from 'home-assistant-js-websocket'
-import { OnOffToggle } from './util.js'
+import { MediaPlayback, MuteToggle, OnOffToggle } from './util.js'
 
 export const LIGHT_MAX_BRIGHTNESS = 255
 
@@ -31,6 +31,53 @@ export function OnOffPicker(): CompanionInputFieldCheckbox<'state'> {
 		label: 'State',
 		id: 'state',
 		default: true,
+	}
+}
+
+export function MediaPlaybackPicker(): CompanionInputFieldDropdown<'action'> {
+	const options = [
+		{ id: MediaPlayback.Play, label: 'Play' },
+		{ id: MediaPlayback.Pause, label: 'Pause' },
+		{ id: MediaPlayback.PlayPause, label: 'Play / Pause (toggle)' },
+		{ id: MediaPlayback.Stop, label: 'Stop' },
+	]
+	return {
+		type: 'dropdown',
+		label: 'Action',
+		id: 'action',
+		default: MediaPlayback.PlayPause,
+		choices: options,
+		disableAutoExpression: true,
+	}
+}
+
+export function MediaMutePicker(): CompanionInputFieldDropdown<'state'> {
+	const options = [
+		{ id: MuteToggle.Mute, label: 'Mute' },
+		{ id: MuteToggle.Unmute, label: 'Unmute' },
+		{ id: MuteToggle.Toggle, label: 'Toggle' },
+	]
+	return {
+		type: 'dropdown',
+		label: 'Action',
+		id: 'state',
+		default: MuteToggle.Mute,
+		choices: options,
+		disableAutoExpression: true,
+	}
+}
+
+// Common media_player states. Entities may report others, so custom values are allowed.
+export const MEDIA_PLAYER_STATES = ['playing', 'paused', 'idle', 'buffering', 'on', 'off', 'standby']
+
+export function MediaPlaybackStatePicker(): CompanionInputFieldDropdown<'state'> {
+	return {
+		type: 'dropdown',
+		label: 'State',
+		id: 'state',
+		default: 'playing',
+		choices: MEDIA_PLAYER_STATES.map((state) => ({ id: state, label: state })),
+		allowCustom: true,
 	}
 }
 
